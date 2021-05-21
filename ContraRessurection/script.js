@@ -21,13 +21,24 @@ var PLAYER = {
     fireRate: 1,
     fireStrength: 1,
     fireBurst: 1,
-    HP: 3,
+    HP: 2,
+    model: new Image()
+}
+
+var BONUS = {
+    x: 300,
+    y: 230,
+    width: 13,
+    height: 12,
+    show: true,
+    type: 1,
     model: new Image()
 }
 
 function init() {
-    GAME.background.src = "img/bg.png"
-    PLAYER.model.src = `img/sprites/player/armor${PLAYER.HP - 1}/playerMoveNShoot${PLAYER.moveState}.png`;
+    GAME.background.src = "img/bg.png";
+    BONUS.model.src = `img/sprites/bonus${BONUS.type}.png`;
+    PLAYER.model.src = `img/sprites/player/armor${PLAYER.HP - 1}/playerMove${PLAYER.moveState}.png`;
     var canvas = document.getElementById("canvas");
     _initCanvas(canvas);
     _initEventsListeners(canvas);
@@ -46,14 +57,29 @@ function draw() {
     GAME.canvasContext.clearRect(0, 0, GAME.width, GAME.height);
     GAME.canvasContext.drawImage(GAME.background, 0, 0, GAME.width, GAME.height);  //Рисуем фон
     GAME.canvasContext.drawImage(PLAYER.model, PLAYER.x, PLAYER.y, PLAYER.width, PLAYER.height);
+    if (BONUS.show){
+        GAME.canvasContext.drawImage(BONUS.model, BONUS.x, BONUS.y, BONUS.width, BONUS.height);
+    }
 }
 
 function update() {
+    var collisionWithBonus = _playerhascollidedbonus(BONUS, PLAYER);
+    var BonusGathered = false;
     GAME.steps += 1;
     PLAYER.x += PLAYER.xDirection;
+    console.log(PLAYER.HP);
     if (GAME.steps > 20){
         PLAYER.xDirection = 0;
         GAME.steps = 0;
+    }
+    if (collisionWithBonus){
+        BONUS.show = false;
+        BonusGathered = true;
+        collisionWithBonus = false;
+    }
+    if (BonusGathered){
+        BonusGathered = false;
+        _applyBonus(BONUS, PLAYER);
     }
 }
 
@@ -65,6 +91,12 @@ function _initCanvas(canvas) {
 
 function _initEventsListeners(canvas) {
     document.addEventListener("keydown", _onDocumentMovementKeys);
+}
+
+function _playerhascollidedbonus(bonus, p){ //Подразумевается, что ни один объект не сможет "подбирать" бонусы, кроме игрока. Исчезновение бонусов по любым причинам, кроме соприкоснования со спрайтом игрока - некорректное поведение.
+    var xCollision = (p.x + p.width >= bonus.x) && (p.x <= bonus.x + bonus.width );
+    var yCollision = (p.y + p.height >= bonus.y) && (p.y <= bonus.y + bonus. height);
+    return xCollision && yCollision;        
 }
 
 function _onDocumentMovementKeys(event) {
@@ -83,5 +115,13 @@ function changeMovementSprite(){
         clearInterval(GAME.animation);
         GAME.animation = null;
     }
-    PLAYER.model.src = `img/sprites/player/armor${PLAYER.HP - 1}/playerMoveNShoot${PLAYER.moveState}.png`
+    PLAYER.model.src = `img/sprites/player/armor${PLAYER.HP - 1}/playerMove${PLAYER.moveState}.png`
+}
+
+function _applyBonus(bonus, p){ //Если бонус может "поднимать" только игрок, то и его эффект должен применяться исключительно на игроке. Остальные случаи - некорректное поведение. 
+    switch(bonus.type){
+        case 1:
+            p.HP = 3;
+            break;
+    }
 }
