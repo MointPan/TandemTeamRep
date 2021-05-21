@@ -1,5 +1,5 @@
 # Contra Resurrection
-##### Current version - Demo 0.0.1
+##### Current version - Demo 0.0.2
 #### Changelog:
 ##### Demo 0.0.1:
 * Several Player sprites added
