@@ -4,35 +4,42 @@ var GAME = {
     fps: 1000 / 60,
     canvasContext: null,
     background: new Image(),
-    animation: null,
-    movement: null,
     steps: 0
 }
 
-var PLAYER = {
+var PLAYER = { //Пока что - одиночный объект "игрок". В скором времени - экземпляр класса "Персонаж"
     x: 100,
     y: 200,
-    xDirection: 0,
-    yxDirection: 0,
-    moveState: 0,
-    speed: 1,
     width: 31,
-    height: 43,
+    height: 43, //С первого по четвёртый параметры - начальная позиция, размеры
+    xDirection: 0,
+    yDirection: 0,
+    moveState: 0,
+    collisionWithPlatform: null,
+    animation: null, //С пятого по девятый - векторы направления движения, флаги анимации, коллайдера, итератор анимации перемещения
+    speed: 1,
     fireRate: 1,
-    fireStrength: 1,
+    fireDamage: 1,
     fireBurst: 1,
-    HP: 2,
-    model: new Image()
+    HP: 2, //С десятого по четырнадцатый - характеристики игрока - скорость перемещения, скорость стрельбы, урон, количесвто снарядов за выстрел, здоровье 
+    model: new Image(),
 }
 
-var BONUS = {
+var BONUS = { //Бонус - улучшает характеристики игрока
     x: 300,
     y: 230,
     width: 13,
-    height: 12,
-    show: true,
-    type: 1,
+    height: 12, //С первого по четвёртый параметры - начальная позиция, размеры
+    show: true, //Указывает, нужно ли отображать бонус на игровом поле. Далее по логике в случае "подбора" игроком исчезает
+    type: 2, //Тип бонуса. От типа бонуса зависит, какие характеристики он улучшает
     model: new Image()
+}
+
+var GROUND = {
+    x: 0,
+    y: GAME.height - 100,
+    width: GAME.width,
+    height: 10
 }
 
 function init() {
@@ -56,6 +63,8 @@ function play() {
 function draw() {
     GAME.canvasContext.clearRect(0, 0, GAME.width, GAME.height);
     GAME.canvasContext.drawImage(GAME.background, 0, 0, GAME.width, GAME.height);  //Рисуем фон
+    GAME.canvasContext.fillStyle = 'green';
+    GAME.canvasContext.fillRect(GROUND.x, GROUND.y, GROUND.width, GROUND.height);
     GAME.canvasContext.drawImage(PLAYER.model, PLAYER.x, PLAYER.y, PLAYER.width, PLAYER.height);
     if (BONUS.show){
         GAME.canvasContext.drawImage(BONUS.model, BONUS.x, BONUS.y, BONUS.width, BONUS.height);
@@ -64,13 +73,12 @@ function draw() {
 
 function update() {
     var collisionWithBonus = _playerhascollidedbonus(BONUS, PLAYER);
+    PLAYER.collisionWithPlatform = _playerGrounded(PLAYER, GROUND);
     var BonusGathered = false;
-    GAME.steps += 1;
-    PLAYER.x += PLAYER.xDirection;
-    console.log(PLAYER.HP);
-    if (GAME.steps > 20){
-        PLAYER.xDirection = 0;
-        GAME.steps = 0;
+    if (!PLAYER.collisionWithPlatform){
+        PLAYER.yDirection =+ 2;
+    } else {
+        PLAYER.yDirection = 0;
     }
     if (collisionWithBonus){
         BONUS.show = false;
@@ -81,6 +89,13 @@ function update() {
         BonusGathered = false;
         _applyBonus(BONUS, PLAYER);
     }
+    GAME.steps += 1;
+    PLAYER.x += PLAYER.xDirection;
+    PLAYER.y += PLAYER.yDirection;
+    if (GAME.steps > 20){
+        PLAYER.xDirection = 0;
+        GAME.steps = 0;
+    }
 }
 
 function _initCanvas(canvas) {
@@ -90,7 +105,13 @@ function _initCanvas(canvas) {
 }
 
 function _initEventsListeners(canvas) {
-    document.addEventListener("keydown", _onDocumentMovementKeys);
+    document.addEventListener("keydown", _onDocumentControlKeys);
+}
+
+function _playerGrounded(p, platform){//Определяет, находится ли персонаж на платформе или висит в воздухе
+    var xCollision = (p.x >= platform.x) && (p.x < platform.x + platform.width);
+    var yCollision = p.y + p.height  >= platform.y;
+    return xCollision && yCollision;
 }
 
 function _playerhascollidedbonus(bonus, p){ //Подразумевается, что ни один объект не сможет "подбирать" бонусы, кроме игрока. Исчезновение бонусов по любым причинам, кроме соприкоснования со спрайтом игрока - некорректное поведение.
@@ -99,21 +120,27 @@ function _playerhascollidedbonus(bonus, p){ //Подразумевается, ч
     return xCollision && yCollision;        
 }
 
-function _onDocumentMovementKeys(event) {
+function _onDocumentControlKeys(event) {
     if (event.key == "ArrowRight") {
         PLAYER.xDirection =+ PLAYER.speed;
-        if (!GAME.animation) {
-            GAME.animation = setInterval(changeMovementSprite, 1000/8);
-        }
+    }
+    if (event.key == "ArrowLeft"){
+        PLAYER.xDirection =- PLAYER.speed;
+    }
+    if (((event.key == "ArrowRight") || (event.key == "ArrowLeft")) && !PLAYER.animation && PLAYER.collisionWithPlatform) {
+        PLAYER.animation = setInterval(changeMovementSprite, 1000/8);
+    }
+    if (event.key == "Control"){
+        console.log('Shoot!');
     }
 }
 
-function changeMovementSprite(){
+function changeMovementSprite(){//Проигрывает анимацию ходьбы путём быстрой смены спрайтов определённое число раз за секунду
     PLAYER.moveState += 1;
     if (PLAYER.moveState > 3) {
         PLAYER.moveState = 1;
-        clearInterval(GAME.animation);
-        GAME.animation = null;
+        clearInterval(PLAYER.animation);
+        PLAYER.animation = null;
     }
     PLAYER.model.src = `img/sprites/player/armor${PLAYER.HP - 1}/playerMove${PLAYER.moveState}.png`
 }
@@ -121,6 +148,8 @@ function changeMovementSprite(){
 function _applyBonus(bonus, p){ //Если бонус может "поднимать" только игрок, то и его эффект должен применяться исключительно на игроке. Остальные случаи - некорректное поведение. 
     switch(bonus.type){
         case 1:
+            p.HP = 2;
+        case 2:
             p.HP = 3;
             break;
     }
