@@ -3,7 +3,7 @@ var Platforms = [];
 Platforms[0] = {
     x: 1,
     y: 400,
-    width: 500,
+    width: 550,
     height: 10,
 }
 
@@ -113,6 +113,9 @@ function update() {
         } else if (PLAYER.gravity == "Grounded"){
             PLAYER.yDirection = 0;
         }
+    }
+    if (PLAYER.x + PLAYER.width > GAME.width){
+        alert('Location secure. Congratulations, level is passed!');
     }   
     if (collisionWithBonus){
         BONUS.show = false;
