@@ -1,15 +1,15 @@
 var Platforms = [];
 
 Platforms[0] = {
-    x: 1,
+    x: 0,
     y: 400,
     width: 550,
-    height: 10,
+    height: 100,
 }
 
 Platforms[1] = {
     x: 175,
-    y: 330,
+    y: 300,
     width: 100,
     height: 10,
 }
@@ -54,7 +54,7 @@ var PLAYER = { //Пока что - одиночный объект "игрок".
 
 var BONUS = { //Бонус улучшает характеристики игрока
     x: 210,
-    y: 300,
+    y: 270,
     width: 19,
     height: 18, //С первого по четвёртый параметры - начальная позиция, размеры
     show: true, //Указывает, нужно ли отображать бонус на игровом поле. Далее по логике в случае "подбора" игроком исчезает
@@ -143,7 +143,7 @@ function _initEventsListeners() {
 }
 
 function _playerGrounded(p, num){ //Определяет, находится ли персонаж на платформе или висит в воздухе
-    var xCollision = (p.x >= Platforms[num].x) && (p.x < Platforms[num].x + Platforms[num].width);
+    var xCollision = (p.x + p.width >= Platforms[num].x) && (p.x < Platforms[num].x + Platforms[num].width);
     var yCollision = p.y + p.height  >= Platforms[num].y;
     var result = null;
     if (xCollision && yCollision){
@@ -185,7 +185,7 @@ function _onDocumentControlKeys(event) {
 
 function jump(){
     GAME.jumpHeight -= PLAYER.yDirection;
-    if (GAME.jumpHeight >= 100){    
+    if (GAME.jumpHeight >= 120){    
         GAME.jumpHeight = 0;
         clearInterval(PLAYER.animation);
         PLAYER.gravity = "Fall"; 
