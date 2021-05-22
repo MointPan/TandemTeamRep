@@ -208,6 +208,7 @@ function _applyBonus(bonus, p){ //Если бонус может "поднима
     switch(bonus.type){
         case 1:
             p.HP = 2;
+            break;
         case 2:
             p.HP = 3;
             break;
