@@ -34,7 +34,6 @@ var BULLET = {
     xDirection: 0,
     width: 2,
     height: 2,
-    show: 0,
 }
 
 var PLAYER = { //Пока что - одиночный объект "игрок". В скором времени - экземпляр класса "Персонаж"
@@ -91,10 +90,12 @@ function draw() {
         GAME.canvasContext.fillRect(Platforms[i].x, Platforms[i].y, Platforms[i].width, Platforms[i].height);   
     }
     GAME.canvasContext.drawImage(PLAYER.model, PLAYER.x, PLAYER.y, PLAYER.width, PLAYER.height);
-    if (BULLET.show){
-        GAME.canvasContext.fillStyle = 'orange';
-        GAME.canvasContext.fillRect(BULLET.x, BULLET.y, BULLET.width, BULLET.height);
-    }
+    if (GAME.bulletsAmount !== 0){
+        for (let bulletsOnField = 0; bulletsOnField <= GAME.bulletsAmount; bulletsOnField++){
+            GAME.canvasContext.fillStyle = 'orange';
+            GAME.canvasContext.fillRect(BULLETS[bulletsOnField].x, BULLETS[bulletsOnField].y, BULLETS[bulletsOnField].width, BULLETS[bulletsOnField].height);
+        }
+        }
     if (BONUS.show){
         GAME.canvasContext.drawImage(BONUS.model, BONUS.x, BONUS.y, BONUS.width, BONUS.height);
     }
@@ -126,7 +127,9 @@ function update() {
     }
     GAME.steps += 1;
     PLAYER.x += PLAYER.xDirection;
-    BULLET.x += BULLET.xDirection;
+    for (let bulletsFlying = 0; bulletsFlying <= GAME.bulletsAmount; bulletsFlying++){
+        BULLETS[bulletsFlying].x += BULLETS[bulletsFlying].xDirection;
+    }
     PLAYER.y += PLAYER.yDirection;
     if (GAME.steps > 20){ //разбивает перемещение на маленькие отрезки, чтобы сделать его плавным
         PLAYER.xDirection = 0;
@@ -173,10 +176,8 @@ function _onDocumentControlKeys(event) {
         PLAYER.animation = setInterval(changeMovementSprite, 1000/8);
     }
     if (event.key == "Control"){
-        BULLET.x = PLAYER.x + (PLAYER.width / 2 + 16    );
-        BULLET.y = PLAYER.y + (PLAYER.height / 2 - 9);
-        BULLET.xDirection =+ 4;
-        BULLET.show = true;
+        GAME.bulletsAmount += 1;
+        BULLETS[GAME.bulletsAmount] = {x: PLAYER.x + (PLAYER.width / 2 + 16), y: PLAYER.y + (PLAYER.height / 2 - 9), xDirection: 4, width: 2, height: 2,}
     }
     if (event.key == "Shift"){
         if (PLAYER.gravity == "Grounded"){
