@@ -1,3 +1,21 @@
+var Platforms = [];
+
+var BULLETS = [];
+
+Platforms[0] = {
+    x: 1,
+    y: 400,
+    width: 500,
+    height: 10,
+}
+
+Platforms[1] = {
+    x: 75,
+    y: 330,
+    width: 100,
+    height: 10,
+}
+
 var GAME = {
     width: 500,
     height: 500,
@@ -5,7 +23,18 @@ var GAME = {
     canvasContext: null,
     background: new Image(),
     steps: 0,
-    jumpHeight: 0
+    jumpHeight: 0,
+    bulletsAmount: 0,
+}
+
+var BULLET = {
+    x: 0,
+    y: 0,
+    yDirection: 0,
+    xDirection: 0,
+    width: 2,
+    height: 2,
+    show: 0,
 }
 
 var PLAYER = { //Пока что - одиночный объект "игрок". В скором времени - экземпляр класса "Персонаж"
@@ -36,13 +65,6 @@ var BONUS = { //Бонус улучшает характеристики игр�
     model: new Image()
 }
 
-var GROUND = {
-    x: 0,
-    y: GAME.height - 100,
-    width: GAME.width,
-    height: 10
-}
-
 function init() {
     GAME.background.src = "img/bg.png";
     BONUS.model.src = `img/sprites/bonus${BONUS.type}.png`;
@@ -64,9 +86,15 @@ function play() {
 function draw() {
     GAME.canvasContext.clearRect(0, 0, GAME.width, GAME.height);
     GAME.canvasContext.drawImage(GAME.background, 0, 0, GAME.width, GAME.height);  //Рисуем фон
-    GAME.canvasContext.fillStyle = 'green';
-    GAME.canvasContext.fillRect(GROUND.x, GROUND.y, GROUND.width, GROUND.height);
+    GAME.canvasContext.fillStyle = 'grey';
+    for (let i = 0; i <= 1; i++) {
+        GAME.canvasContext.fillRect(Platforms[i].x, Platforms[i].y, Platforms[i].width, Platforms[i].height);   
+    }
     GAME.canvasContext.drawImage(PLAYER.model, PLAYER.x, PLAYER.y, PLAYER.width, PLAYER.height);
+    if (BULLET.show){
+        GAME.canvasContext.fillStyle = 'orange';
+        GAME.canvasContext.fillRect(BULLET.x, BULLET.y, BULLET.width, BULLET.height);
+    }
     if (BONUS.show){
         GAME.canvasContext.drawImage(BONUS.model, BONUS.x, BONUS.y, BONUS.width, BONUS.height);
     }
@@ -79,7 +107,12 @@ function update() {
         PLAYER.animation = setInterval(jump(), GAME.fps);
         PLAYER.animation = null;
     } else{
-        PLAYER.gravity = _playerGrounded(PLAYER, GROUND);
+        for (let i = 0; i <= 1; i++){
+            PLAYER.gravity = _playerGrounded(PLAYER, i);
+            if (PLAYER.gravity == "Grounded"){
+                break;
+            }
+        }
         if (PLAYER.gravity == "Fall"){
             PLAYER.yDirection =+ 2;
         } else if (PLAYER.gravity == "Grounded"){
@@ -93,6 +126,7 @@ function update() {
     }
     GAME.steps += 1;
     PLAYER.x += PLAYER.xDirection;
+    BULLET.x += BULLET.xDirection;
     PLAYER.y += PLAYER.yDirection;
     if (GAME.steps > 20){ //разбивает перемещение на маленькие отрезки, чтобы сделать его плавным
         PLAYER.xDirection = 0;
@@ -110,9 +144,9 @@ function _initEventsListeners() {
     document.addEventListener("keydown", _onDocumentControlKeys);
 }
 
-function _playerGrounded(p, platform){ //Определяет, находится ли персонаж на платформе или висит в воздухе
-    var xCollision = (p.x >= platform.x) && (p.x < platform.x + platform.width);
-    var yCollision = p.y + p.height  >= platform.y;
+function _playerGrounded(p, num){ //Определяет, находится ли персонаж на платформе или висит в воздухе
+    var xCollision = (p.x >= Platforms[num].x) && (p.x < Platforms[num].x + Platforms[num].width);
+    var yCollision = p.y + p.height  >= Platforms[num].y;
     var result = null;
     if (xCollision && yCollision){
         result = "Grounded";
@@ -135,14 +169,19 @@ function _onDocumentControlKeys(event) {
     if (event.key == "ArrowLeft"){
         PLAYER.xDirection =- PLAYER.speed;
     }
-    if (((event.key == "ArrowRight") || (event.key == "ArrowLeft")) && !PLAYER.animation && PLAYER.gravity == "Grounded") {
+    if (((event.key == "ArrowRight") || (event.key == "ArrowLeft")) && (!PLAYER.animation && PLAYER.gravity == "Grounded")) {
         PLAYER.animation = setInterval(changeMovementSprite, 1000/8);
     }
     if (event.key == "Control"){
-        console.log('Shoot!');
+        BULLET.x = PLAYER.x + (PLAYER.width / 2 + 16    );
+        BULLET.y = PLAYER.y + (PLAYER.height / 2 - 9);
+        BULLET.xDirection =+ 4;
+        BULLET.show = true;
     }
     if (event.key == "Shift"){
+        if (PLAYER.gravity == "Grounded"){
         PLAYER.gravity = "Jump";
+        }
     }
 }
 
@@ -162,7 +201,7 @@ function changeMovementSprite(){//Проигрывает анимацию ход
         clearInterval(PLAYER.animation);
         PLAYER.animation = null;
     }
-    PLAYER.model.src = `img/sprites/player/armor${PLAYER.HP - 1}/playerMove${PLAYER.moveState}.png`
+    PLAYER.model.src = `img/sprites/player/armor${PLAYER.HP - 1}/playerMoveNShoot${PLAYER.moveState}.png`
 }
 
 function _applyBonus(bonus, p){ //Если бонус может "поднимать" только игрок, то и его эффект должен применяться исключительно на игроке. Остальные случаи - некорректное поведение. 
