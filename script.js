@@ -15,8 +15,8 @@ Platforms[1] = {
 }
 
 var GAME = {
-    width: 500,
-    height: 500,
+    width: 1280,
+    height: 720,
     fps: 1000 / 60,
     canvasContext: null,
     background: new Image(),
