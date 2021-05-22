@@ -44,6 +44,7 @@ var PLAYER = { //Пока что - одиночный объект "игрок".
     moveState: 0,
     gravity: "Fall",
     animation: null, //С пятого по девятый - векторы направления движения, флаги анимации, коллайдера, итератор анимации перемещения
+    modelDirection: "right",
     speed: 1,
     fireRate: 1,
     fireDamage: 1,
@@ -65,7 +66,7 @@ var BONUS = { //Бонус улучшает характеристики игр�
 function init() {
     GAME.background.src = "img/bg.png";
     BONUS.model.src = `img/sprites/bonus${BONUS.type}.png`;
-    PLAYER.model.src = `img/sprites/player/armor${PLAYER.HP - 1}/playerMove${PLAYER.moveState}.png`;
+    PLAYER.model.src = `img/sprites/player/${PLAYER.modelDirection}/armor${PLAYER.HP - 1}/playerMove${PLAYER.moveState}.png`;
     var canvas = document.getElementById("canvas");
     _initCanvas(canvas);
     _initEventsListeners(canvas);
@@ -163,9 +164,11 @@ function _playerhascollidedbonus(bonus, p){ //Подразумевается, ч
 function _onDocumentControlKeys(event) {
     if (event.key == "ArrowRight") {
         PLAYER.xDirection =+ PLAYER.speed;
+        PLAYER.modelDirection = "right";
     }
     if (event.key == "ArrowLeft"){
         PLAYER.xDirection =- PLAYER.speed;
+        PLAYER.modelDirection = "left";
     }
     if (((event.key == "ArrowRight") || (event.key == "ArrowLeft")) && (!PLAYER.animation && PLAYER.gravity == "Grounded")) {
         PLAYER.animation = setInterval(changeMovementSprite, 1000/8);
@@ -199,7 +202,7 @@ function changeMovementSprite(){//Проигрывает анимацию ход
         clearInterval(PLAYER.animation);
         PLAYER.animation = null;
     }
-    PLAYER.model.src = `img/sprites/player/armor${PLAYER.HP - 1}/playerMoveNShoot${PLAYER.moveState}.png`
+    PLAYER.model.src = `img/sprites/player/${PLAYER.modelDirection}/armor${PLAYER.HP - 1}/playerMoveNShoot${PLAYER.moveState}.png`
 }
 
 function _applyBonus(bonus, p){ //Если бонус может "поднимать" только игрок, то и его эффект должен применяться исключительно на игроке. Остальные случаи - некорректное поведение. 
