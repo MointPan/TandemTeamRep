@@ -1,7 +1,5 @@
 var Platforms = [];
 
-var BULLETS = [];
-
 Platforms[0] = {
     x: 1,
     y: 400,
@@ -10,7 +8,7 @@ Platforms[0] = {
 }
 
 Platforms[1] = {
-    x: 75,
+    x: 175,
     y: 330,
     width: 100,
     height: 10,
@@ -24,7 +22,6 @@ var GAME = {
     background: new Image(),
     steps: 0,
     jumpHeight: 0,
-    bulletsAmount: 0,
 }
 
 var BULLET = {
@@ -34,13 +31,14 @@ var BULLET = {
     xDirection: 0,
     width: 2,
     height: 2,
+    show: 0,
 }
 
 var PLAYER = { //Пока что - одиночный объект "игрок". В скором времени - экземпляр класса "Персонаж"
     x: 100,
     y: 200,
-    width: 31,
-    height: 43, //С первого по четвёртый параметры - начальная позиция, размеры
+    width: 46,
+    height: 64, //С первого по четвёртый параметры - начальная позиция, размеры
     xDirection: 0,
     yDirection: 0,
     moveState: 0,
@@ -55,10 +53,10 @@ var PLAYER = { //Пока что - одиночный объект "игрок".
 }
 
 var BONUS = { //Бонус улучшает характеристики игрока
-    x: 300,
-    y: 230,
-    width: 13,
-    height: 12, //С первого по четвёртый параметры - начальная позиция, размеры
+    x: 210,
+    y: 300,
+    width: 19,
+    height: 18, //С первого по четвёртый параметры - начальная позиция, размеры
     show: true, //Указывает, нужно ли отображать бонус на игровом поле. Далее по логике в случае "подбора" игроком исчезает
     type: 2, //Тип бонуса. От типа бонуса зависит, какие характеристики он улучшает
     model: new Image()
@@ -90,12 +88,8 @@ function draw() {
         GAME.canvasContext.fillRect(Platforms[i].x, Platforms[i].y, Platforms[i].width, Platforms[i].height);   
     }
     GAME.canvasContext.drawImage(PLAYER.model, PLAYER.x, PLAYER.y, PLAYER.width, PLAYER.height);
-    if (GAME.bulletsAmount !== 0){
-        for (let bulletsOnField = 0; bulletsOnField <= GAME.bulletsAmount; bulletsOnField++){
-            GAME.canvasContext.fillStyle = 'orange';
-            GAME.canvasContext.fillRect(BULLETS[bulletsOnField].x, BULLETS[bulletsOnField].y, BULLETS[bulletsOnField].width, BULLETS[bulletsOnField].height);
-        }
-        }
+    GAME.canvasContext.fillStyle = 'orange';
+    GAME.canvasContext.fillRect(BULLET.x, BULLET.y, BULLET.width, BULLET.height);
     if (BONUS.show){
         GAME.canvasContext.drawImage(BONUS.model, BONUS.x, BONUS.y, BONUS.width, BONUS.height);
     }
@@ -127,9 +121,7 @@ function update() {
     }
     GAME.steps += 1;
     PLAYER.x += PLAYER.xDirection;
-    for (let bulletsFlying = 0; bulletsFlying <= GAME.bulletsAmount; bulletsFlying++){
-        BULLETS[bulletsFlying].x += BULLETS[bulletsFlying].xDirection;
-    }
+    BULLET.x += BULLET.xDirection;
     PLAYER.y += PLAYER.yDirection;
     if (GAME.steps > 20){ //разбивает перемещение на маленькие отрезки, чтобы сделать его плавным
         PLAYER.xDirection = 0;
@@ -176,8 +168,10 @@ function _onDocumentControlKeys(event) {
         PLAYER.animation = setInterval(changeMovementSprite, 1000/8);
     }
     if (event.key == "Control"){
-        GAME.bulletsAmount += 1;
-        BULLETS[GAME.bulletsAmount] = {x: PLAYER.x + (PLAYER.width / 2 + 16), y: PLAYER.y + (PLAYER.height / 2 - 9), xDirection: 4, width: 2, height: 2,}
+        BULLET.x = PLAYER.x + (PLAYER.width / 2 + 16);
+        BULLET.y = PLAYER.y + (PLAYER.height / 2 - 12);
+        BULLET.xDirection =+ 4;
+        BULLET.show = true;
     }
     if (event.key == "Shift"){
         if (PLAYER.gravity == "Grounded"){
@@ -188,7 +182,7 @@ function _onDocumentControlKeys(event) {
 
 function jump(){
     GAME.jumpHeight -= PLAYER.yDirection;
-    if (GAME.jumpHeight >= 50){    
+    if (GAME.jumpHeight >= 100){    
         GAME.jumpHeight = 0;
         clearInterval(PLAYER.animation);
         PLAYER.gravity = "Fall"; 
