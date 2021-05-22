@@ -4,7 +4,8 @@ var GAME = {
     fps: 1000 / 60,
     canvasContext: null,
     background: new Image(),
-    steps: 0
+    steps: 0,
+    jumpHeight: 0
 }
 
 var PLAYER = { //Пока что - одиночный объект "игрок". В скором времени - экземпляр класса "Персонаж"
@@ -15,7 +16,7 @@ var PLAYER = { //Пока что - одиночный объект "игрок".
     xDirection: 0,
     yDirection: 0,
     moveState: 0,
-    collisionWithPlatform: null,
+    gravity: "Fall",
     animation: null, //С пятого по девятый - векторы направления движения, флаги анимации, коллайдера, итератор анимации перемещения
     speed: 1,
     fireRate: 1,
@@ -25,7 +26,7 @@ var PLAYER = { //Пока что - одиночный объект "игрок".
     model: new Image(),
 }
 
-var BONUS = { //Бонус - улучшает характеристики игрока
+var BONUS = { //Бонус улучшает характеристики игрока
     x: 300,
     y: 230,
     width: 13,
@@ -73,26 +74,27 @@ function draw() {
 
 function update() {
     var collisionWithBonus = _playerhascollidedbonus(BONUS, PLAYER);
-    PLAYER.collisionWithPlatform = _playerGrounded(PLAYER, GROUND);
-    var BonusGathered = false;
-    if (!PLAYER.collisionWithPlatform){
-        PLAYER.yDirection =+ 2;
-    } else {
-        PLAYER.yDirection = 0;
-    }
+    if (PLAYER.gravity == "Jump"){
+        PLAYER.yDirection =- 2;
+        PLAYER.animation = setInterval(jump(), GAME.fps);
+        PLAYER.animation = null;
+    } else{
+        PLAYER.gravity = _playerGrounded(PLAYER, GROUND);
+        if (PLAYER.gravity == "Fall"){
+            PLAYER.yDirection =+ 2;
+        } else if (PLAYER.gravity == "Grounded"){
+            PLAYER.yDirection = 0;
+        }
+    }   
     if (collisionWithBonus){
         BONUS.show = false;
-        BonusGathered = true;
-        collisionWithBonus = false;
-    }
-    if (BonusGathered){
-        BonusGathered = false;
         _applyBonus(BONUS, PLAYER);
+        collisionWithBonus = false;
     }
     GAME.steps += 1;
     PLAYER.x += PLAYER.xDirection;
     PLAYER.y += PLAYER.yDirection;
-    if (GAME.steps > 20){
+    if (GAME.steps > 20){ //разбивает перемещение на маленькие отрезки, чтобы сделать его плавным
         PLAYER.xDirection = 0;
         GAME.steps = 0;
     }
@@ -104,14 +106,20 @@ function _initCanvas(canvas) {
     GAME.canvasContext = canvas.getContext("2d");
 }
 
-function _initEventsListeners(canvas) {
+function _initEventsListeners() {
     document.addEventListener("keydown", _onDocumentControlKeys);
 }
 
-function _playerGrounded(p, platform){//Определяет, находится ли персонаж на платформе или висит в воздухе
+function _playerGrounded(p, platform){ //Определяет, находится ли персонаж на платформе или висит в воздухе
     var xCollision = (p.x >= platform.x) && (p.x < platform.x + platform.width);
     var yCollision = p.y + p.height  >= platform.y;
-    return xCollision && yCollision;
+    var result = null;
+    if (xCollision && yCollision){
+        result = "Grounded";
+    } else if(p.gravity !== "Jump"){
+        result = "Fall";
+    }
+    return result; 
 }
 
 function _playerhascollidedbonus(bonus, p){ //Подразумевается, что ни один объект не сможет "подбирать" бонусы, кроме игрока. Исчезновение бонусов по любым причинам, кроме соприкоснования со спрайтом игрока - некорректное поведение.
@@ -127,11 +135,23 @@ function _onDocumentControlKeys(event) {
     if (event.key == "ArrowLeft"){
         PLAYER.xDirection =- PLAYER.speed;
     }
-    if (((event.key == "ArrowRight") || (event.key == "ArrowLeft")) && !PLAYER.animation && PLAYER.collisionWithPlatform) {
+    if (((event.key == "ArrowRight") || (event.key == "ArrowLeft")) && !PLAYER.animation && PLAYER.gravity == "Grounded") {
         PLAYER.animation = setInterval(changeMovementSprite, 1000/8);
     }
     if (event.key == "Control"){
         console.log('Shoot!');
+    }
+    if (event.key == "Shift"){
+        PLAYER.gravity = "Jump";
+    }
+}
+
+function jump(){
+    GAME.jumpHeight -= PLAYER.yDirection;
+    if (GAME.jumpHeight >= 50){    
+        GAME.jumpHeight = 0;
+        clearInterval(PLAYER.animation);
+        PLAYER.gravity = "Fall"; 
     }
 }
 
